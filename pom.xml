@@ -24,6 +24,7 @@
     <modules>
         <module>seckill-common</module>
         <module>seckill-user</module>
+        <module>seckill-goods</module>
     </modules>
 
     <!-- 版本号统一管理 -->
@@ -51,6 +52,12 @@
             <dependency>
                 <groupId>com.quanxiaoha</groupId>
                 <artifactId>xiaoha-seckill-user</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <!-- 商品模块 -->
+            <dependency>
+                <groupId>com.quanxiaoha</groupId>
+                <artifactId>xiaoha-seckill-goods</artifactId>
                 <version>${revision}</version>
             </dependency>
 
