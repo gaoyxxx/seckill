@@ -22,9 +22,15 @@
 
     <!-- 子模块管理 -->
     <modules>
+        <!-- 启动入口 -->
+        <module>seckill-app</module>
+        <!-- 公共模块   -->
         <module>seckill-common</module>
+        <!-- 用户模块 -->
         <module>seckill-user</module>
+        <!-- 商品模块 -->
         <module>seckill-goods</module>
+        <!-- 订单模块 -->
         <module>seckill-order</module>
     </modules>
 
@@ -45,26 +51,32 @@
         <dependencies>
             <!-- 公共模块 -->
             <dependency>
-                <groupId>com.quanxiaoha</groupId>
-                <artifactId>xiaoha-seckill-common</artifactId>
+                <groupId>com.gaoyxxx</groupId>
+                <artifactId>seckill-common</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 用户模块 -->
             <dependency>
-                <groupId>com.quanxiaoha</groupId>
-                <artifactId>xiaoha-seckill-user</artifactId>
+                <groupId>com.gaoyxxx</groupId>
+                <artifactId>seckill-user</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 商品模块 -->
             <dependency>
-                <groupId>com.quanxiaoha</groupId>
-                <artifactId>xiaoha-seckill-goods</artifactId>
+                <groupId>com.gaoyxxx</groupId>
+                <artifactId>seckill-goods</artifactId>
                 <version>${revision}</version>
             </dependency>
             <!-- 订单模块 -->
             <dependency>
-                <groupId>com.quanxiaoha</groupId>
-                <artifactId>xiaoha-seckill-order</artifactId>
+                <groupId>com.gaoyxxx</groupId>
+                <artifactId>seckill-order</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <!-- 启动模块 -->
+            <dependency>
+                <groupId>com.gaoyxxx</groupId>
+                <artifactId>seckill-app</artifactId>
                 <version>${revision}</version>
             </dependency>
 
