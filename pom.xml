@@ -25,6 +25,7 @@
         <module>seckill-common</module>
         <module>seckill-user</module>
         <module>seckill-goods</module>
+        <module>seckill-order</module>
     </modules>
 
     <!-- 版本号统一管理 -->
@@ -58,6 +59,12 @@
             <dependency>
                 <groupId>com.quanxiaoha</groupId>
                 <artifactId>xiaoha-seckill-goods</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <!-- 订单模块 -->
+            <dependency>
+                <groupId>com.quanxiaoha</groupId>
+                <artifactId>xiaoha-seckill-order</artifactId>
                 <version>${revision}</version>
             </dependency>
 
