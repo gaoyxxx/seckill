@@ -22,6 +22,7 @@
 
     <!-- 子模块管理 -->
     <modules>
+        <module>seckill-common</module>
     </modules>
 
     <!-- 版本号统一管理 -->
@@ -39,9 +40,16 @@
     <!-- 统一依赖管理 -->
     <dependencyManagement>
         <dependencies>
+            <!-- 公共模块 -->
+            <dependency>
+                <groupId>com.quanxiaoha</groupId>
+                <artifactId>xiaoha-seckill-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
 
         </dependencies>
     </dependencyManagement>
+
 
     <build>
         <!-- 统一插件管理 -->
