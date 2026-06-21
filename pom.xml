@@ -44,6 +44,10 @@
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <!-- 项目编码 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- 依赖包版本 -->
+        <!-- MyBatis 版本 -->
+        <mybatis-spring-boot.version>3.0.5</mybatis-spring-boot.version>
     </properties>
 
     <!-- 统一依赖管理 -->
@@ -78,6 +82,13 @@
                 <groupId>com.gaoyxxx</groupId>
                 <artifactId>seckill-app</artifactId>
                 <version>${revision}</version>
+            </dependency>
+
+            <!-- MyBatis Spring Boot Starter -->
+            <dependency>
+                <groupId>org.mybatis.spring.boot</groupId>
+                <artifactId>mybatis-spring-boot-starter</artifactId>
+                <version>${mybatis-spring-boot.version}</version>
             </dependency>
 
         </dependencies>
