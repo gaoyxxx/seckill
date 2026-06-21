@@ -20,8 +20,12 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
 
 
     // ----------- 业务异常状态码 -----------
-    SECKILL_SOLD_OUT("20001", "商品已售罄"),
-    SECKILL_DUPLICATE("20002", "您已参与过此秒杀活动"),
+
+    // ----------- 用户模块异常状态码 -----------
+    USER_MOBILE_EXISTS("20001", "该手机号已注册"),
+    USER_VERIFY_CODE_ERROR("20002", "验证码错误"),
+
+
 
     ;
 
