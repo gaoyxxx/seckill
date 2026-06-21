@@ -34,8 +34,18 @@
             <artifactId>lombok</artifactId>
         </dependency>
 
-
-
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- 代码生成器 -->
+            <plugin>
+                <groupId>org.mybatis.generator</groupId>
+                <artifactId>mybatis-generator-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+
 </project>
 
