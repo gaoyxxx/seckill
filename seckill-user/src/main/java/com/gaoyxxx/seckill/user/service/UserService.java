@@ -4,6 +4,7 @@ import com.gaoyxxx.seckill.common.utils.Response;
 import com.gaoyxxx.seckill.user.model.vo.LoginUserReqVO;
 import com.gaoyxxx.seckill.user.model.vo.LoginUserRspVO;
 import com.gaoyxxx.seckill.user.model.vo.RegisterUserReqVO;
+import com.gaoyxxx.seckill.user.model.vo.SendVerifyCodeReqVO;
 
 /**
  * @Author: gaoyx
@@ -26,4 +27,11 @@ public interface UserService {
      * @return
      */
     Response<LoginUserRspVO> login(LoginUserReqVO loginUserReqVO);
+
+    /**
+     * 发送验证码
+     * @param sendVerifyCodeReqVO
+     * @return
+     */
+    Response<?> sendVerifyCode(SendVerifyCodeReqVO sendVerifyCodeReqVO);
 }
