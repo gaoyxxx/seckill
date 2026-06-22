@@ -22,4 +22,11 @@ public interface UserDOMapper {
      */
     Long selectIdByMobile(String mobile);
 
+    /**
+     * 根据手机号查询用户信息
+     * @param mobile
+     * @return
+     */
+    UserDO selectByMobile(String mobile);
+
 }

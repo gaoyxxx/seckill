@@ -130,7 +130,13 @@
     <select id="selectIdByMobile" resultType="java.lang.Long">
         select id
         from t_user
-        where mobile = #{mobile}
+        where mobile = #{mobile, jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectByMobile" resultType="com.gaoyxxx.seckill.common.domain.dataobject.UserDO">
+        select <include refid="Base_Column_List" />
+        from t_user
+        where mobile = #{mobile, jdbcType=VARCHAR}
     </select>
 
 </mapper>
