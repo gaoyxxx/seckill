@@ -2,6 +2,8 @@ package com.gaoyxxx.seckill.user.controller;
 
 import com.gaoyxxx.seckill.common.aspect.ApiOperationLog;
 import com.gaoyxxx.seckill.common.utils.Response;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserReqVO;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserRspVO;
 import com.gaoyxxx.seckill.user.model.vo.RegisterUserReqVO;
 import com.gaoyxxx.seckill.user.service.UserService;
 import jakarta.annotation.Resource;
@@ -25,13 +27,18 @@ public class UserController {
     @Resource
     private UserService userService;
 
-    /**
-     * 用户注册
-     */
+
     @PostMapping("/register")
     @ApiOperationLog(description = "用户注册")
     public Response<?> register(@Validated @RequestBody RegisterUserReqVO registerUserReqVO) {
         return userService.register(registerUserReqVO);
     }
+
+    @PostMapping("/login")
+    @ApiOperationLog(description = "用户登录")
+    public Response<LoginUserRspVO> login(@Validated @RequestBody LoginUserReqVO loginUserReqVO) {
+        return userService.login(loginUserReqVO);
+    }
+
 
 }
