@@ -1,12 +1,17 @@
 package com.gaoyxxx.seckill.user.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import com.gaoyxxx.seckill.common.domain.dataobject.UserDO;
 import com.gaoyxxx.seckill.common.domain.mapper.UserDOMapper;
 import com.gaoyxxx.seckill.common.enums.ResponseCodeEnum;
 import com.gaoyxxx.seckill.common.exception.BizException;
 import com.gaoyxxx.seckill.common.utils.Response;
+import com.gaoyxxx.seckill.user.enums.LoginTypeEnum;
 import com.gaoyxxx.seckill.user.enums.UserStatusEnum;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserReqVO;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserRspVO;
 import com.gaoyxxx.seckill.user.model.vo.RegisterUserReqVO;
 import com.gaoyxxx.seckill.user.service.UserService;
 import jakarta.annotation.Resource;
@@ -72,6 +77,60 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
+     * 用户登录
+     *
+     * @param loginUserReqVO
+     * @return
+     */
+    @Override
+    public Response<LoginUserRspVO> login(LoginUserReqVO loginUserReqVO) {
+        String mobile = loginUserReqVO.getMobile();
+        Integer type = loginUserReqVO.getType();
+
+        // 1. 根据手机号查询用户
+        UserDO userDO = userDOMapper.selectByMobile(mobile);
+
+        // 2. 判断用户是否存在
+        if (Objects.isNull(userDO)) {
+            throw new BizException(ResponseCodeEnum.USER_MOBILE_NOT_REGISTERED);
+        }
+
+        // 3. 根据用户登陆类型身份校验
+        if (Objects.equals(type, LoginTypeEnum.PASSWORD.getCode())) {
+            // 密码登录，校验密码是否正确
+            checkPassword(loginUserReqVO.getPassword(), userDO.getPassword());
+        } else {
+            // 验证码登录，校验验证码是否正确
+            checkVerifyCode(loginUserReqVO.getVerifyCode());
+        }
+
+        // 4. 校验用户状态（是否被封号）
+        if (Objects.equals(userDO.getStatus(), UserStatusEnum.DISABLED.getCode())) {
+            throw new BizException(ResponseCodeEnum.USER_STATUS_DISABLED);
+        }
+
+        // 5. SaToken 执行登录，传入用户 ID
+        StpUtil.login(userDO.getId());
+
+        // 6. 获取 token
+        String token = StpUtil.getTokenValue();
+
+        // 7. 构建返回结果
+        LoginUserRspVO loginUserRspVO = LoginUserRspVO.builder()
+                .token(token)
+                .userInfo(LoginUserRspVO.UserInfo.builder()
+                        .id(userDO.getId())
+                        .nickname(userDO.getNickname())
+                        .avatar(userDO.getAvatar())
+                        .build())
+                .build();
+
+        log.info("==> 用户登录成功, userId: {}, mobile: {}", userDO.getId(), mobile);
+
+        return Response.success(loginUserRspVO);
+    }
+
+    /**
      * 生成随机昵称
      * 格式：用户 + 6 位随机数字，如：用户382910
      *
@@ -79,5 +138,39 @@ public class UserServiceImpl implements UserService {
      */
     private String generateNickname() {
         return "用户" + RandomUtil.randomNumbers(6);
+    }
+
+    /**
+     * 校验密码
+     * @param password
+     * @param encodedPassword
+     */
+    private void checkPassword(String password, String encodedPassword) {
+        // 密码不能为空
+        if (StrUtil.isBlank(password)) {
+            throw new BizException(ResponseCodeEnum.USER_PASSWORD_ERROR);
+        }
+
+        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
+        boolean matches = bCryptPasswordEncoder.matches(password, encodedPassword);
+        if (!matches) {
+            throw new BizException(ResponseCodeEnum.USER_PASSWORD_ERROR);
+        }
+    }
+
+    /**
+     * 校验验证码
+     * @param verifyCode
+     */
+    private void checkVerifyCode(String verifyCode) {
+        // 验证码不能为空
+        if (StrUtil.isBlank(verifyCode)) {
+            throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
+        }
+
+        // TODO: 验证码校验逻辑，后续开发验证码发送接口，再重构这里
+        if (!"123456".equals(verifyCode)) {
+            throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
+        }
     }
 }

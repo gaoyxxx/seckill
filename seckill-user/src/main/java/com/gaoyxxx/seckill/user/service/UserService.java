@@ -1,6 +1,8 @@
 package com.gaoyxxx.seckill.user.service;
 
 import com.gaoyxxx.seckill.common.utils.Response;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserReqVO;
+import com.gaoyxxx.seckill.user.model.vo.LoginUserRspVO;
 import com.gaoyxxx.seckill.user.model.vo.RegisterUserReqVO;
 
 /**
@@ -16,4 +18,12 @@ public interface UserService {
      * @return
      */
     Response<?> register(RegisterUserReqVO registerUserReqVO);
+
+
+    /**
+     * 用户登录
+     * @param loginUserReqVO
+     * @return
+     */
+    Response<LoginUserRspVO> login(LoginUserReqVO loginUserReqVO);
 }
