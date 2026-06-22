@@ -27,7 +27,8 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
     USER_MOBILE_NOT_REGISTERED("20003", "该手机号未注册"),
     USER_PASSWORD_ERROR("20004", "密码错误"),
     USER_STATUS_DISABLED("20005", "用户已禁用，请联系管理员"),
-
+    VERIFY_CODE_TYPE_ERROR("20006", "验证码类型错误"),
+    VERIFY_CODE_SEND_TOO_FREQUENTLY("20007", "验证码发送过于频繁"),
 
     ;
 
