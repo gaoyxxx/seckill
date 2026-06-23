@@ -39,7 +39,6 @@ spring:
       database: 0
       # 连接超时时间（毫秒）
       timeout: 5000
-
       # Lettuce 连接池配置（提升连接复用效率）
       lettuce:
         pool:
