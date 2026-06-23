@@ -91,6 +91,10 @@ public class UserServiceImpl implements UserService {
      * 登录失败计数 Lua 脚本
      */
     private final DefaultRedisScript<Long> checkAndIncrementLoginFailScript;
+    /**
+     * 每日发送次数限制 Lua 脚本
+     */
+    private final DefaultRedisScript<Long> checkAndIncrementDailyLimitScript;
 
 
     /**
@@ -107,6 +111,10 @@ public class UserServiceImpl implements UserService {
         checkAndIncrementLoginFailScript = new DefaultRedisScript<>();
         checkAndIncrementLoginFailScript.setLocation(new ClassPathResource("lua/check_and_increment_login_fail_count.lua"));
         checkAndIncrementLoginFailScript.setResultType(Long.class);
+
+        checkAndIncrementDailyLimitScript = new DefaultRedisScript<>();
+        checkAndIncrementDailyLimitScript.setLocation(new ClassPathResource("lua/check_and_increment_verify_code_daily_limit.lua"));
+        checkAndIncrementDailyLimitScript.setResultType(Long.class);
     }
 
 
@@ -221,7 +229,12 @@ public class UserServiceImpl implements UserService {
 
         // 发送频率限制：检查是否在 60 秒内重复发送
         String limitKey = VERIFY_CODE_LIMIT_KEY_PREFIX + verifyCodeType.getPurpose() + ":" + mobile;
-        if (stringRedisTemplate.hasKey(limitKey)) {
+
+        // 如果 Key 已存在（60 秒内已发送过），返回 false；不存在则创建 Key 并返回 true
+        Boolean absent = stringRedisTemplate.opsForValue()
+                .setIfAbsent(limitKey, "1", VERIFY_CODE_LIMIT_SECONDS, TimeUnit.SECONDS);
+
+        if (Boolean.FALSE.equals(absent)) {
             throw new BizException(ResponseCodeEnum.VERIFY_CODE_SEND_TOO_FREQUENTLY);
         }
 
@@ -229,25 +242,23 @@ public class UserServiceImpl implements UserService {
         String dailyLimitKey = VERIFY_CODE_DAILY_LIMIT_KEY_PREFIX + verifyCodeType.getPurpose()
                 + ":" + mobile + ":" + LocalDate.now();
 
-        // 发送次数 +1
-        Long dailyCount = stringRedisTemplate.opsForValue().increment(dailyLimitKey);
+        // 计算从当前时间，到第二天凌晨零点之间还剩下多少秒
+        long secondsUntilMidnight = Duration.between(
+                LocalDateTime.now(),
+                LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIDNIGHT)
+        ).getSeconds();
 
-        // 首次设置缓存时，计算到当天结束的剩余秒数，作为 Key 的 TTL 过期时间
-        if (Objects.nonNull(dailyCount) && dailyCount == 1) {
-            // 计算从当前时间，到第二天凌晨零点之间还剩下多少秒
-            long secondsUntilMidnight = Duration.between(
-                    LocalDateTime.now(),
-                    LocalDateTime.of(LocalDate.now().plusDays(1), LocalTime.MIDNIGHT)
-            ).getSeconds();
-
-            // 设置过期时间
-            stringRedisTemplate.expire(dailyLimitKey, secondsUntilMidnight, TimeUnit.SECONDS);
-        }
+        // 执行 Lua 脚本：原子性地检查每日发送次数并累加
+        Long dailyCount = stringRedisTemplate.execute(checkAndIncrementDailyLimitScript,
+                Collections.singletonList(dailyLimitKey),
+                String.valueOf(VERIFY_CODE_DAILY_LIMIT),
+                String.valueOf(secondsUntilMidnight));
 
         // 如果已经超过 10 条，抛出业务异常
-        if (Objects.nonNull(dailyCount) && dailyCount > VERIFY_CODE_DAILY_LIMIT) {
+        if (Objects.nonNull(dailyCount) && dailyCount == -1) {
             throw new BizException(ResponseCodeEnum.VERIFY_CODE_DAILY_LIMIT_EXCEEDED);
         }
+
 
 
         // 生成 6 位随机数字验证码
@@ -255,16 +266,7 @@ public class UserServiceImpl implements UserService {
 
         // 通过 Pipeline 通道，批量写入 Redis（频率限制 Key + 验证码），减少网络往返，降低部分失败的风险
         String redisKey = VERIFY_CODE_KEY_PREFIX + verifyCodeType.getPurpose() + ":" + mobile;
-        stringRedisTemplate.executePipelined(new SessionCallback<Void>() {
-            @Override
-            public Void execute(RedisOperations operations) {
-                // 先写频率限制 Key（60 秒 TTL）
-                operations.opsForValue().set(limitKey, "1", VERIFY_CODE_LIMIT_SECONDS, TimeUnit.SECONDS);
-                // 再写验证码 Key（5 分钟 TTL）
-                operations.opsForValue().set(redisKey, verifyCode, VERIFY_CODE_EXPIRE_MINUTES, TimeUnit.MINUTES);
-                return null;
-            }
-        });
+        stringRedisTemplate.opsForValue().set(redisKey, verifyCode, VERIFY_CODE_EXPIRE_MINUTES, TimeUnit.SECONDS);
 
         // 异步发送短信验证码
         bizExecutor.execute(() -> sendSms(mobile, verifyCode));
