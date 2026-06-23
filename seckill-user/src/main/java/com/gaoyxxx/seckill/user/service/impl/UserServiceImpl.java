@@ -68,10 +68,7 @@ public class UserServiceImpl implements UserService {
         String verifyCode = registerUserReqVO.getVerifyCode();
 
         // 1. 校验验证码
-        // TODO: 验证码先写死 123456，后续开发验证码发送接口，再重构这里
-        if (!"123456".equals(verifyCode)) {
-            throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
-        }
+        checkVerifyCode(verifyCode, mobile, VerifyCodeTypeEnum.REGISTER.getPurpose());
 
         // 2. 校验手机号是否已注册
         Long existUserId = userDOMapper.selectIdByMobile(mobile);
@@ -236,7 +233,6 @@ public class UserServiceImpl implements UserService {
         String redisKey = VERIFY_CODE_KEY_PREFIX + purpose + ":" + mobile;
         Object storeCode = redisTemplate.opsForValue().get(redisKey);
 
-        // TODO: 验证码校验逻辑，后续开发验证码发送接口，再重构这里
         if (Objects.isNull(storeCode)
             || !verifyCode.equals(storeCode.toString())) {
             throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
