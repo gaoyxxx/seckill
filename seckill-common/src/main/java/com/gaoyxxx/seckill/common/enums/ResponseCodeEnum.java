@@ -24,7 +24,7 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
     // ----------- 用户模块异常状态码 -----------
     USER_MOBILE_EXISTS("20001", "该手机号已注册"),
     USER_VERIFY_CODE_ERROR("20002", "验证码错误"),
-    USER_MOBILE_NOT_REGISTERED("20003", "该手机号未注册"),
+    USER_MOBILE_NOT_REGISTERED("20003", "该手机号未注册"), // TODO 可能暴露手机号是否注册，后续合并20003与20004
     USER_PASSWORD_ERROR("20004", "密码错误"),
     USER_STATUS_DISABLED("20005", "用户已禁用，请联系管理员"),
     VERIFY_CODE_TYPE_ERROR("20006", "验证码类型错误"),
