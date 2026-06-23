@@ -47,8 +47,8 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserDOMapper userDOMapper;
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+//    @Resource
+//    private RedisTemplate<String, Object> redisTemplate;
     @Resource
     private StringRedisTemplate stringRedisTemplate;
     @Resource(name = "bizExecutor")
@@ -221,7 +221,7 @@ public class UserServiceImpl implements UserService {
 
         // 发送频率限制：检查是否在 60 秒内重复发送
         String limitKey = VERIFY_CODE_LIMIT_KEY_PREFIX + verifyCodeType.getPurpose() + ":" + mobile;
-        if (redisTemplate.hasKey(limitKey)) {
+        if (stringRedisTemplate.hasKey(limitKey)) {
             throw new BizException(ResponseCodeEnum.VERIFY_CODE_SEND_TOO_FREQUENTLY);
         }
 
@@ -230,7 +230,7 @@ public class UserServiceImpl implements UserService {
                 + ":" + mobile + ":" + LocalDate.now();
 
         // 发送次数 +1
-        Long dailyCount = redisTemplate.opsForValue().increment(dailyLimitKey);
+        Long dailyCount = stringRedisTemplate.opsForValue().increment(dailyLimitKey);
 
         // 首次设置缓存时，计算到当天结束的剩余秒数，作为 Key 的 TTL 过期时间
         if (Objects.nonNull(dailyCount) && dailyCount == 1) {
@@ -241,7 +241,7 @@ public class UserServiceImpl implements UserService {
             ).getSeconds();
 
             // 设置过期时间
-            redisTemplate.expire(dailyLimitKey, secondsUntilMidnight, TimeUnit.SECONDS);
+            stringRedisTemplate.expire(dailyLimitKey, secondsUntilMidnight, TimeUnit.SECONDS);
         }
 
         // 如果已经超过 10 条，抛出业务异常
@@ -255,7 +255,7 @@ public class UserServiceImpl implements UserService {
 
         // 通过 Pipeline 通道，批量写入 Redis（频率限制 Key + 验证码），减少网络往返，降低部分失败的风险
         String redisKey = VERIFY_CODE_KEY_PREFIX + verifyCodeType.getPurpose() + ":" + mobile;
-        redisTemplate.executePipelined(new SessionCallback<Void>() {
+        stringRedisTemplate.executePipelined(new SessionCallback<Void>() {
             @Override
             public Void execute(RedisOperations operations) {
                 // 先写频率限制 Key（60 秒 TTL）
@@ -319,7 +319,7 @@ public class UserServiceImpl implements UserService {
 
         // 密码校验成功，清除登录失败次数
         String failCountKey = LOGIN_FAIL_COUNT_KEY_PREFIX + mobile;
-        redisTemplate.delete(failCountKey);
+        stringRedisTemplate.delete(failCountKey);
     }
 
     /**
@@ -336,7 +336,7 @@ public class UserServiceImpl implements UserService {
         String redisKey = VERIFY_CODE_KEY_PREFIX + purpose + ":" + mobile;
 
         // 执行 lua 脚本，原子性地对比验证码并删除（匹配成功返回 1，不匹配或 key 不存在返回 0）
-        Long result = redisTemplate.execute(checkAndDeleteVerifyCodeScript,
+        Long result = stringRedisTemplate.execute(checkAndDeleteVerifyCodeScript,
                                         Collections.singletonList(redisKey),
                                         verifyCode);
 
@@ -373,12 +373,16 @@ public class UserServiceImpl implements UserService {
         String failCountKey = LOGIN_FAIL_COUNT_KEY_PREFIX + mobile;
 
         // 查询 Redis 缓存中的计数
-        Integer failCount = (Integer) redisTemplate.opsForValue().get(failCountKey);
+        String failCountStr = stringRedisTemplate.opsForValue().get(failCountKey);
 
-        // 判断登录失败次数是否超过上限
-        if (Objects.nonNull(failCount) && failCount >= LOGIN_FAIL_MAX_COUNT) {
-            throw new BizException(ResponseCodeEnum.LOGIN_FAIL_TOO_MANY);
+        if (!Objects.isNull(failCountStr)) {
+            Integer failCount = Integer.parseInt(failCountStr);
+            // 判断登录失败次数是否超过上限
+            if (Objects.nonNull(failCount) && failCount >= LOGIN_FAIL_MAX_COUNT) {
+                throw new BizException(ResponseCodeEnum.LOGIN_FAIL_TOO_MANY);
+            }
         }
+
     }
 
     /**
