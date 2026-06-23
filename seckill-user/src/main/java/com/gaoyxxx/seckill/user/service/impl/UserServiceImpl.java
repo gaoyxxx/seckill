@@ -123,7 +123,7 @@ public class UserServiceImpl implements UserService {
             checkPassword(loginUserReqVO.getPassword(), userDO.getPassword());
         } else {
             // 验证码登录，校验验证码是否正确
-            checkVerifyCode(loginUserReqVO.getVerifyCode());
+            checkVerifyCode(loginUserReqVO.getVerifyCode(), mobile, VerifyCodeTypeEnum.LOGIN.getPurpose());
         }
 
         // 4. 校验用户状态（是否被封号）
@@ -226,16 +226,24 @@ public class UserServiceImpl implements UserService {
      * 校验验证码
      * @param verifyCode
      */
-    private void checkVerifyCode(String verifyCode) {
+    private void checkVerifyCode(String verifyCode, String mobile, String purpose) {
         // 验证码不能为空
         if (StrUtil.isBlank(verifyCode)) {
             throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
         }
 
+        // 从 Redis 中获取对应 手机号+场景 对应的验证码
+        String redisKey = VERIFY_CODE_KEY_PREFIX + purpose + ":" + mobile;
+        Object storeCode = redisTemplate.opsForValue().get(redisKey);
+
         // TODO: 验证码校验逻辑，后续开发验证码发送接口，再重构这里
-        if (!"123456".equals(verifyCode)) {
+        if (Objects.isNull(storeCode)
+            || !verifyCode.equals(storeCode.toString())) {
             throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
         }
+
+        // 删除，防止重复使用
+        redisTemplate.delete(redisKey);
     }
 
     /**
@@ -254,4 +262,6 @@ public class UserServiceImpl implements UserService {
             log.error("==> 验证码发送失败, mobile: {}, verifyCode: {}", mobile, verifyCode, e);
         }
     }
+
+
 }
