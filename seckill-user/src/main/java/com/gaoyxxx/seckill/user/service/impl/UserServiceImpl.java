@@ -18,12 +18,15 @@ import com.gaoyxxx.seckill.user.model.vo.SendVerifyCodeReqVO;
 import com.gaoyxxx.seckill.user.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -53,6 +56,24 @@ public class UserServiceImpl implements UserService {
     private static final Long VERIFY_CODE_EXPIRE_MINUTES = 5L;
     // 发送频率限制时间（秒）
     private static final Long VERIFY_CODE_LIMIT_SECONDS = 60L;
+
+    // ==================== lua 脚本 ====================
+    /**
+     * 验证码校验 lua 脚本
+     */
+    private final DefaultRedisScript<Long> checkAndDeleteVerifyCodeScript;
+
+    /**
+     * 构造函数，初始化 lua 脚本
+     */
+
+    public UserServiceImpl() {
+        checkAndDeleteVerifyCodeScript = new DefaultRedisScript<>();
+        // 从 classpath 下的 lua 文件夹加载脚本
+        checkAndDeleteVerifyCodeScript.setLocation(new ClassPathResource("lua/check_and_delete_verify_code.lua"));
+        // 设置返回类型为 Long
+        checkAndDeleteVerifyCodeScript.setResultType(Long.class);
+    }
 
 
     /**
@@ -229,17 +250,18 @@ public class UserServiceImpl implements UserService {
             throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
         }
 
-        // 从 Redis 中获取对应 手机号+场景 对应的验证码
+        // 从 构建 Redis Key
         String redisKey = VERIFY_CODE_KEY_PREFIX + purpose + ":" + mobile;
-        Object storeCode = redisTemplate.opsForValue().get(redisKey);
 
-        if (Objects.isNull(storeCode)
-            || !verifyCode.equals(storeCode.toString())) {
+        // 执行 lua 脚本，原子性地对比验证码并删除（匹配成功返回 1，不匹配或 key 不存在返回 0）
+        Long result = redisTemplate.execute(checkAndDeleteVerifyCodeScript,
+                                        Collections.singletonList(redisKey),
+                                        verifyCode);
+
+        if (Objects.isNull(result) || result == 0) {
             throw new BizException(ResponseCodeEnum.USER_VERIFY_CODE_ERROR);
         }
 
-        // 删除，防止重复使用
-        redisTemplate.delete(redisKey);
     }
 
     /**
