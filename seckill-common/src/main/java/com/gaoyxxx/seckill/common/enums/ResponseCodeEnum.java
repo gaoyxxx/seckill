@@ -20,8 +20,19 @@ public enum ResponseCodeEnum implements BaseExceptionInterface {
 
 
     // ----------- 业务异常状态码 -----------
-    SECKILL_SOLD_OUT("20001", "商品已售罄"),
-    SECKILL_DUPLICATE("20002", "您已参与过此秒杀活动"),
+
+    // ----------- 用户模块异常状态码 -----------
+    USER_MOBILE_EXISTS("20001", "该手机号已注册"),
+    USER_VERIFY_CODE_ERROR("20002", "验证码错误"),
+    USER_MOBILE_NOT_REGISTERED("20003", "该手机号未注册"), // TODO 可能暴露手机号是否注册，后续合并20003与20004
+    USER_PASSWORD_ERROR("20004", "密码错误"),
+    USER_STATUS_DISABLED("20005", "用户已禁用，请联系管理员"),
+    VERIFY_CODE_TYPE_ERROR("20006", "验证码类型错误"),
+    VERIFY_CODE_SEND_TOO_FREQUENTLY("20007", "验证码发送过于频繁"),
+    VERIFY_CODE_DAILY_LIMIT_EXCEEDED("20008", "验证码每日发送次数已达上限，请明天再试"),
+    LOGIN_FAIL_TOO_MANY("20009", "密码错误次数过多，请 30 分钟后再试"),
+    UNAUTHORIZED("20010", "未登录，请先登录"),
+
 
     ;
 

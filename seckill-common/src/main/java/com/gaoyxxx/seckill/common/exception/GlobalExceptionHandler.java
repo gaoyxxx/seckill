@@ -1,5 +1,6 @@
 package com.gaoyxxx.seckill.common.exception;
 
+import cn.dev33.satoken.exception.NotLoginException;
 import com.gaoyxxx.seckill.common.enums.ResponseCodeEnum;
 import com.gaoyxxx.seckill.common.utils.Response;
 import jakarta.servlet.http.HttpServletRequest;
@@ -65,6 +66,17 @@ public class GlobalExceptionHandler {
 
         return Response.fail(errorCode, errorMessage);
 
+    }
+
+    /**
+     * 捕获 SaToken 未登录异常
+     * @return
+     */
+    @ExceptionHandler({ NotLoginException.class })
+    @ResponseBody
+    public Response<Object> handleNotLoginException(HttpServletRequest request, NotLoginException e) {
+        log.warn("{} request fail, 未登录异常: {}", request.getRequestURI(), e.getMessage());
+        return Response.fail(ResponseCodeEnum.UNAUTHORIZED);
     }
 
     /**

@@ -1,42 +1,36 @@
 package com.gaoyxxx.seckill.user.controller;
 
-import com.gaoyxxx.seckill.common.aspect.ApiOperationLog;
-import com.gaoyxxx.seckill.common.enums.ResponseCodeEnum;
-import com.gaoyxxx.seckill.common.exception.BizException;
+import cn.dev33.satoken.stp.StpUtil;
 import com.gaoyxxx.seckill.common.utils.Response;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.Mapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * @Author: gaoyx
  * @Description:
- * @CreateDateTime: 2026/6/21 17:38
+ * @CreateDateTime: 2026/6/23 0:42
  */
 @RestController
+@RequestMapping("/test")
 @Slf4j
 public class TestController {
 
-    @GetMapping("/test/response")
-    @ApiOperationLog(description = "测试返回值")
-    public Response<String> testResponse(@RequestParam String name) {
-        return Response.success("hello " + name);
-    }
+    @PostMapping("/isLogin")
+    public Response<?> isLogin() {
+        // 调用 SaToken 提供的方法，判断当前请求是否已登录
+        boolean isLogin = StpUtil.isLogin();
 
-    @GetMapping("/test/bizException")
-    @ApiOperationLog(description = "测试业务异常")
-    public Response<String> testBizException() {
-        throw new BizException(ResponseCodeEnum.SECKILL_DUPLICATE);
+        if (isLogin) {
+            // 已登录，获取当前登录的用户 ID
+            long loginId = StpUtil.getLoginIdAsLong();
+            log.info("==> 当前已登录, userId: {}", loginId);
+            return Response.success("当前登录用户 ID: " + loginId);
+        } else {
+            // 未登录
+            return Response.success("当前未登录");
+        }
     }
-
-    @GetMapping("/test/systenException")
-    @ApiOperationLog(description = "测试系统异常")
-    public Response<String> testSystenException() {
-        int i = 1 / 0;
-        return Response.success("草泥马");
-    }
-
 }
