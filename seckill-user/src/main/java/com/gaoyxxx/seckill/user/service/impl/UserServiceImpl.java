@@ -53,6 +53,9 @@ public class UserServiceImpl implements UserService {
     private StringRedisTemplate stringRedisTemplate;
     @Resource(name = "bizExecutor")
     private Executor bizExecutor;
+    // BCrypt 密码编码器
+    private static final BCryptPasswordEncoder PASSWORD_ENCODER = new BCryptPasswordEncoder();
+
 
 
     // Redis 中验证码的 Key 前缀
@@ -129,8 +132,7 @@ public class UserServiceImpl implements UserService {
         }
 
         // 3. 密码加密（使用 BCrypt 算法）
-        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        String encodedPassword = passwordEncoder.encode(password);
+        String encodedPassword = PASSWORD_ENCODER.encode(password);
 
         // 4. 构建用户实体，插入数据库
         UserDO userDO = UserDO.builder()
@@ -293,8 +295,7 @@ public class UserServiceImpl implements UserService {
             throw new BizException(ResponseCodeEnum.USER_PASSWORD_ERROR);
         }
 
-        BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
-        boolean matches = bCryptPasswordEncoder.matches(password, encodedPassword);
+        boolean matches = PASSWORD_ENCODER.matches(password, encodedPassword);
         if (!matches) {
             addLoginFailCount(mobile);
             throw new BizException(ResponseCodeEnum.USER_PASSWORD_ERROR);
