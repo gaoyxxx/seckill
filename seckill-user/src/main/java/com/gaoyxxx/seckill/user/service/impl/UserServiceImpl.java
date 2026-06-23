@@ -22,6 +22,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.SessionCallback;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -48,6 +49,8 @@ public class UserServiceImpl implements UserService {
     private UserDOMapper userDOMapper;
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
+    @Resource
+    private StringRedisTemplate stringRedisTemplate;
     @Resource(name = "bizExecutor")
     private Executor bizExecutor;
 
@@ -371,7 +374,7 @@ public class UserServiceImpl implements UserService {
         String failCountKey = LOGIN_FAIL_COUNT_KEY_PREFIX + mobile;
 
         // 执行 Lua 脚本：原子性地检查失败次数并累加（超限返回 -1; 未超限返回累加后的值）
-        Long result = redisTemplate.execute(checkAndIncrementLoginFailScript,
+        Long result = stringRedisTemplate.execute(checkAndIncrementLoginFailScript,
                 Collections.singletonList(failCountKey),
                 String.valueOf(LOGIN_FAIL_MAX_COUNT),
                 String.valueOf(LOGIN_LOCK_MINUTES * 60));

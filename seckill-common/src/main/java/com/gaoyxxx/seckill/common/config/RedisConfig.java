@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
@@ -34,5 +35,13 @@ public class RedisConfig {
 
         redisTemplate.afterPropertiesSet();
         return redisTemplate;
+    }
+
+    /**
+     * Key 和 Value 都使用 String 序列化的 RedisTemplate
+     */
+    @Bean
+    public StringRedisTemplate stringRedisTemplate(RedisConnectionFactory connectionFactory) {
+        return new StringRedisTemplate(connectionFactory);
     }
 }
