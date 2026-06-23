@@ -81,6 +81,11 @@ public class UserServiceImpl implements UserService {
      * 验证码校验 lua 脚本
      */
     private final DefaultRedisScript<Long> checkAndDeleteVerifyCodeScript;
+    /**
+     * 登录失败计数 Lua 脚本
+     */
+    private final DefaultRedisScript<Long> checkAndIncrementLoginFailScript;
+
 
     /**
      * 构造函数，初始化 lua 脚本
@@ -92,6 +97,10 @@ public class UserServiceImpl implements UserService {
         checkAndDeleteVerifyCodeScript.setLocation(new ClassPathResource("lua/check_and_delete_verify_code.lua"));
         // 设置返回类型为 Long
         checkAndDeleteVerifyCodeScript.setResultType(Long.class);
+
+        checkAndIncrementLoginFailScript = new DefaultRedisScript<>();
+        checkAndIncrementLoginFailScript.setLocation(new ClassPathResource("lua/check_and_increment_login_fail_count.lua"));
+        checkAndIncrementLoginFailScript.setResultType(Long.class);
     }
 
 
@@ -361,12 +370,15 @@ public class UserServiceImpl implements UserService {
         // 构建 Redis Key
         String failCountKey = LOGIN_FAIL_COUNT_KEY_PREFIX + mobile;
 
-        // 查询 Redis 缓存中登录失败次数
-        Long failCount = redisTemplate.opsForValue().increment(failCountKey);
+        // 执行 Lua 脚本：原子性地检查失败次数并累加（超限返回 -1; 未超限返回累加后的值）
+        Long result = redisTemplate.execute(checkAndIncrementLoginFailScript,
+                Collections.singletonList(failCountKey),
+                String.valueOf(LOGIN_FAIL_MAX_COUNT),
+                String.valueOf(LOGIN_LOCK_MINUTES * 60));
 
-        // 如果是第一次添加缓存，需要设置过期时间（锁定窗口）
-        if (Objects.nonNull(failCount) && failCount == 1) {
-            redisTemplate.expire(failCountKey, LOGIN_LOCK_MINUTES, TimeUnit.MINUTES);
+        // 失败次数已达上限，直接拒绝
+        if (Objects.nonNull(result) && result == -1) {
+            throw new BizException(ResponseCodeEnum.LOGIN_FAIL_TOO_MANY);
         }
     }
 
