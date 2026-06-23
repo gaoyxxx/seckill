@@ -272,6 +272,22 @@ public class UserServiceImpl implements UserService {
         return Response.success();
     }
 
+    @Override
+    public Response<?> logout() {
+        // 获取当前请求中的 Token 值
+        String tokenValue = StpUtil.getTokenValue();
+        // 获取当前登录用户的 ID
+        Object userId = StpUtil.getLoginId();
+
+        // 调用 SaToken 的退出登录方法
+        // 此方法会自动从请求头中获取 Token，然后清除该 Token 对应的会话信息
+        StpUtil.logout();
+
+        log.info("==> 用户退出登录, userId: {}, token: {}", userId, tokenValue);
+
+        return Response.success();
+    }
+
     /**
      * 生成随机昵称
      * 格式：用户 + 6 位随机数字，如：用户382910
